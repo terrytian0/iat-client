@@ -49,12 +49,12 @@ func Register() (bool, error) {
 		fmt.Println("body not json")
 		return false, err
 	}
-	status,err := jsonpath.JsonPathLookup(jsonData, "$.status")
+	status, err := jsonpath.JsonPathLookup(jsonData, "$.status")
 	if err != nil {
 		fmt.Println(err)
 		return false, err
 	}
-	if status.(bool)==false{
+	if status.(bool) == false {
 		fmt.Println(body)
 		return false, err
 	}
@@ -189,7 +189,7 @@ func UploadApiResult(apiResult ApiResult) (bool, error) {
 	return true, nil
 }
 
-func GetApiResult(api Api, parameterId int64, requestHeaders map[string]string, requestBody string, header http.Header, body string, extractors []Extractor, asserts []Assert, startTime int64, endTime int64, status bool, message string) ApiResult {
+func GetApiResult(api Api, parameterId int64, requestHeaders map[string]string, requestBody string, header http.Header, responseBody []byte, extractors []Extractor, asserts []Assert, startTime int64, endTime int64, status bool, message string) ApiResult {
 	var ar = new(ApiResult)
 	ar.Client = Client
 	ar.TaskId = api.TaskId
@@ -201,19 +201,23 @@ func GetApiResult(api Api, parameterId int64, requestHeaders map[string]string, 
 	ar.KeywordApiId = api.KeywordApiId
 	ar.ApiId = api.ApiId
 	ar.Status = strconv.FormatBool(status)
-	rh, _ := json.Marshal(requestHeaders)
-	ar.RequestHeaders = string(rh)
+	if requestHeaders != nil {
+		rh, _ := json.Marshal(requestHeaders)
+		ar.RequestHeaders = string(rh)
+	}
 	ar.RequestBody = requestBody
-	ar.ResponseBody = body
-	if header!=nil{
+	if responseBody != nil {
+		ar.ResponseBody = string(responseBody)
+	}
+	if header != nil {
 		responseHeader, _ := json.Marshal(header)
 		ar.ResponseHeaders = string(responseHeader)
 	}
-	if extractors!=nil{
+	if extractors != nil {
 		er, _ := json.Marshal(extractors)
 		ar.Extractors = string(er)
 	}
-	if asserts!=nil{
+	if asserts != nil {
 		as, _ := json.Marshal(asserts)
 		ar.Asserts = string(as)
 	}
@@ -225,7 +229,7 @@ func GetApiResult(api Api, parameterId int64, requestHeaders map[string]string, 
 }
 
 func GetTask() (*Task, error) {
-	url := "http://" + Server + GET_TASK+"?client="+Client+"&key="+Key
+	url := "http://" + Server + GET_TASK + "?client=" + Client + "&key=" + Key
 	response, err := http.Get(url)
 	if err != nil {
 		return nil, err

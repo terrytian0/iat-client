@@ -117,6 +117,7 @@ func runApi(parameter map[string]string, parameterId int64, api iat.Api) (map[st
 	endTime := iat.GetTimestamp()
 	var message string
 	var res = true
+	var responseHeader http.Header
 	var responseBody []byte
 	var extractors []iat.Extractor
 	var asserts []iat.Assert
@@ -125,6 +126,7 @@ func runApi(parameter map[string]string, parameterId int64, api iat.Api) (map[st
 		message = err.Error()
 	} else {
 		defer response.Body.Close()
+		responseHeader = response.Header
 		responseBody, err = ioutil.ReadAll(response.Body)
 		if err != nil {
 			res = false
@@ -136,7 +138,7 @@ func runApi(parameter map[string]string, parameterId int64, api iat.Api) (map[st
 			res, asserts, message = assert(parameter, response.StatusCode, string(responseBody), response.Header, asserts)
 		}
 	}
-	apiResult := iat.GetApiResult(api, parameterId, requestHeaders, string(requestBody), response.Header, string(responseBody), extractors, asserts, startTime, endTime, res, message)
+	apiResult := iat.GetApiResult(api, parameterId, requestHeaders, requestBody, responseHeader, responseBody, extractors, asserts, startTime, endTime, res, message)
 	iat.UploadApiResult(apiResult)
 	return parameter, res, message
 }
