@@ -39,8 +39,8 @@ func main() {
 	}
 }
 
-func heartbeat()  {
-	for true  {
+func heartbeat() {
+	for true {
 		iat.Heartbeat()
 		time.Sleep(60 * time.Second)
 	}
@@ -115,20 +115,28 @@ func runApi(parameter map[string]string, parameterId int64, api iat.Api) (map[st
 	startTime := iat.GetTimestamp()
 	response, err := client.Do(req)
 	endTime := iat.GetTimestamp()
-	if err!=nil{
-		return parameter,false,err.Error()
-	}
-	defer response.Body.Close()
-	responseBody, err := ioutil.ReadAll(response.Body)
+	var message string
+	var res bool
+	var responseBody []byte
+	var extractors []iat.Extractor
+	var asserts []iat.Assert
 	if err != nil {
-		fmt.Println(err)
-		return parameter,false,err.Error()
+		res = false
+		message = err.Error()
+	} else {
+		defer response.Body.Close()
+		responseBody, err = ioutil.ReadAll(response.Body)
+		if err != nil {
+			res = false
+			message = err.Error()
+		}else{
+			extractors := iat.GetExtractor(api.Extractors)
+			parameter, extractors = extractor(parameter, string(responseBody), extractors)
+			asserts := iat.GetAssert(api.Asserts)
+			res, asserts, message = assert(parameter, response.StatusCode, string(responseBody), response.Header, asserts)
+		}
 	}
-	extractors := iat.GetExtractor(api.Extractors)
-	parameter, extractors = extractor(parameter, string(responseBody), extractors)
-	asserts := iat.GetAssert(api.Asserts)
-	res, asserts, message := assert(parameter, response.StatusCode, string(responseBody), response.Header, asserts)
-	apiResult := iat.GetApiResult(api, parameterId, requestHeaders, string(responseBody), response.Header, string(responseBody), extractors, asserts, startTime, endTime, res, message)
+	apiResult := iat.GetApiResult(api, parameterId, requestHeaders, string(requestBody), response.Header, string(responseBody), extractors, asserts, startTime, endTime, res, message)
 	iat.UploadApiResult(apiResult)
 	return parameter, res, message
 }
