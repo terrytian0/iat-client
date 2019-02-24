@@ -205,12 +205,18 @@ func GetApiResult(api Api, parameterId int64, requestHeaders map[string]string, 
 	ar.RequestHeaders = string(rh)
 	ar.RequestBody = requestBody
 	ar.ResponseBody = body
-	responseHeader, _ := json.Marshal(header)
-	ar.ResponseHeaders = string(responseHeader)
-	er, _ := json.Marshal(extractors)
-	ar.Extractors = string(er)
-	as, _ := json.Marshal(asserts)
-	ar.Asserts = string(as)
+	if header!=nil{
+		responseHeader, _ := json.Marshal(header)
+		ar.ResponseHeaders = string(responseHeader)
+	}
+	if extractors!=nil{
+		er, _ := json.Marshal(extractors)
+		ar.Extractors = string(er)
+	}
+	if asserts!=nil{
+		as, _ := json.Marshal(asserts)
+		ar.Asserts = string(as)
+	}
 	ar.StartTime = startTime
 	ar.EndTime = endTime
 	ar.Message = message
