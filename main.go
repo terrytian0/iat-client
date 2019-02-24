@@ -115,10 +115,14 @@ func runApi(parameter map[string]string, parameterId int64, api iat.Api) (map[st
 	startTime := iat.GetTimestamp()
 	response, err := client.Do(req)
 	endTime := iat.GetTimestamp()
+	if err!=nil{
+		return parameter,false,err.Error()
+	}
 	defer response.Body.Close()
 	responseBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		fmt.Println(err)
+		return parameter,false,err.Error()
 	}
 	extractors := iat.GetExtractor(api.Extractors)
 	parameter, extractors = extractor(parameter, string(responseBody), extractors)
