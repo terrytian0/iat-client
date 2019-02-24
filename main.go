@@ -24,8 +24,9 @@ func main() {
 	if iat.Client == "" {
 		iat.Client = iat.GetLocalIp()
 	}
-	res, _ := iat.Register()
+	res, err := iat.Register()
 	if res == false {
+		fmt.Println(err)
 		return
 	}
 	go heartbeat()
