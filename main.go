@@ -116,7 +116,7 @@ func runApi(parameter map[string]string, parameterId int64, api iat.Api) (map[st
 	response, err := client.Do(req)
 	endTime := iat.GetTimestamp()
 	var message string
-	var res bool
+	var res = true
 	var responseBody []byte
 	var extractors []iat.Extractor
 	var asserts []iat.Assert
@@ -129,7 +129,7 @@ func runApi(parameter map[string]string, parameterId int64, api iat.Api) (map[st
 		if err != nil {
 			res = false
 			message = err.Error()
-		}else{
+		} else {
 			extractors := iat.GetExtractor(api.Extractors)
 			parameter, extractors = extractor(parameter, string(responseBody), extractors)
 			asserts := iat.GetAssert(api.Asserts)
