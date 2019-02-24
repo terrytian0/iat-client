@@ -11,25 +11,39 @@ import (
 	"sync"
 	"github.com/terrtian0/iat-client/iat"
 	"net/http"
+	"flag"
 )
-
 
 var currentTask = make(map[int64]iat.Task)
 var mutex sync.Mutex
 
 func main() {
+	flag.StringVar(&iat.Server, "s", "127.0.0.1:8080", "iat server")
+	flag.StringVar(&iat.Client, "l", "", "iat server")
+	flag.Parse()
+	if iat.Client == "" {
+		iat.Client = iat.GetLocalIp()
+	}
+	res, _ := iat.Register()
+	if res == false {
+		return
+	}
+	go heartbeat()
 	for true {
 		if len(currentTask) < 3 {
 			go exec()
 		}
-		fmt.Println("当前"+strconv.Itoa(len(currentTask))+"个任务正在执行，sleep 10 secend!")
+		fmt.Println("当前" + strconv.Itoa(len(currentTask)) + "个任务正在执行，sleep 10 secend!")
 		time.Sleep(10 * time.Second)
 	}
 }
 
-
-
-
+func heartbeat()  {
+	for true  {
+		iat.Heartbeat()
+		time.Sleep(60 * time.Second)
+	}
+}
 
 func exec() {
 	task, err := iat.GetTask()
@@ -45,8 +59,6 @@ func exec() {
 	taskResult := iat.GetTaskResult(task.Id, startTime, endTime, "FINISHED")
 	iat.UploadTaskResult(taskResult)
 }
-
-
 
 func runTask(task iat.Task) {
 	for _, testcase := range task.Testcases {
@@ -69,7 +81,6 @@ func runTestcase(testcase iat.Testcase) (bool, string) {
 	}
 	return true, ""
 }
-
 
 func runParameter(parameter map[string]string, parameterId int64, keywords []iat.Keyword) (map[string]string, bool, string) {
 	for _, keyword := range keywords {
@@ -143,7 +154,6 @@ func extractor(parameter map[string]string, body string, es []iat.Extractor) (ma
 	}
 	return parameter, es
 }
-
 
 func assert(parameter map[string]string, httpcode int, body string, header http.Header, asserts []iat.Assert) (bool, []iat.Assert, string) {
 	if asserts == nil {
@@ -222,9 +232,3 @@ func interfaceToString(res interface{}) string {
 		return res.(string)
 	}
 }
-
-
-
-
-
-

@@ -11,15 +11,89 @@ import (
 	"time"
 	"strings"
 	"strconv"
+	"os"
+	"github.com/oliveagle/jsonpath"
 )
 
-var server = "http://127.0.0.1:8080/task/get"
+var Server string
+var Client string
+var Key string
 
+const (
+	REGISTER         = "/client/register"
+	HEARTBEAT        = "/client/heartbeat"
+	GET_TASK         = "/task/get"
+	RESULT_TASK      = "/task/result/task"
+	RESULT_PARAMETER = "/task/result/parameter"
+	RESULT_API       = "/task/result/api"
+)
 
+func Register() (bool, error) {
+	url := "http://" + Server + REGISTER + "?client=" + Client
+	response, err := http.Post(url, "application/json;charset=UTF-8", nil)
+	if err != nil {
+		return false, err
+	}
+	if response.StatusCode != 200 {
+		return false, errors.New("http code " + strconv.Itoa(response.StatusCode))
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return false, err
+	}
 
+	var jsonData interface{}
+	err = json.Unmarshal([]byte(body), &jsonData)
+	if err != nil {
+		fmt.Println("body not json")
+		return false, err
+	}
+	status,err := jsonpath.JsonPathLookup(jsonData, "$.status")
+	if err != nil {
+		fmt.Println(err)
+		return false, err
+	}
+	if status.(bool)==false{
+		fmt.Println(body)
+		return false, err
+	}
+	key, err := jsonpath.JsonPathLookup(jsonData, "$.content.key")
+	if err != nil {
+		fmt.Println(err)
+		return false, err
+	}
+	Key = key.(string)
+	return true, nil
+}
+
+func Heartbeat() {
+	url := "http://" + Server + HEARTBEAT + "?client=" + Client + "&key=" + Key
+	response, err := http.Post(url, "application/json;charset=UTF-8", nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if response.StatusCode != 200 {
+		fmt.Println(errors.New("http code " + strconv.Itoa(response.StatusCode)))
+		return
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	var result ServerResult
+	json.Unmarshal(body, &result)
+	if result.Status == false {
+		fmt.Println(result.Message)
+		return
+	}
+}
 
 func UploadTaskResult(taskResult TaskResult) (bool, error) {
-	url := "http://127.0.0.1:8080/task/result/task"
+	url := "http://" + Server + RESULT_TASK
 	rBody, err := json.Marshal(taskResult)
 	fmt.Println(string(rBody))
 	response, err := http.Post(url, "application/json;charset=UTF-8", strings.NewReader(string(rBody)))
@@ -44,18 +118,18 @@ func UploadTaskResult(taskResult TaskResult) (bool, error) {
 
 func GetTaskResult(id int64, startTime int64, endTime int64, status string) TaskResult {
 	var tr = new(TaskResult)
-	tr.Client = "127.0.0.1"
+	tr.Client = Client
 	tr.Id = id
 	tr.StartTime = startTime
 	tr.EndTime = endTime
 	tr.Status = status
+	tr.Key = Key
 	return *tr
 
 }
 
-
 func UploadParameterResult(parameterResult ParameterResult) (bool, error) {
-	url := "http://127.0.0.1:8080/task/result/parameter"
+	url := "http://" + Server + RESULT_PARAMETER
 	rBody, err := json.Marshal(parameterResult)
 	fmt.Println(string(rBody))
 	response, err := http.Post(url, "application/json;charset=UTF-8", strings.NewReader(string(rBody)))
@@ -80,18 +154,19 @@ func UploadParameterResult(parameterResult ParameterResult) (bool, error) {
 
 func GetParameterResult(id int64, startTime int64, endTime int64, status bool, message string) ParameterResult {
 	var pr = new(ParameterResult)
-	pr.Client = "127.0.0.1"
+	pr.Client = Client
 	pr.Id = id
 	pr.StartTime = startTime
 	pr.EndTime = endTime
 	pr.Status = strconv.FormatBool(status)
 	pr.Message = message
+	pr.Key = Key
 	return *pr
 
 }
 
 func UploadApiResult(apiResult ApiResult) (bool, error) {
-	url := "http://127.0.0.1:8080/task/result/api"
+	url := "http://" + Server + RESULT_API
 	rBody, err := json.Marshal(apiResult)
 	fmt.Println(string(rBody))
 	response, err := http.Post(url, "application/json;charset=UTF-8", strings.NewReader(string(rBody)))
@@ -114,10 +189,9 @@ func UploadApiResult(apiResult ApiResult) (bool, error) {
 	return true, nil
 }
 
-
 func GetApiResult(api Api, parameterId int64, requestHeaders map[string]string, requestBody string, header http.Header, body string, extractors []Extractor, asserts []Assert, startTime int64, endTime int64, status bool, message string) ApiResult {
 	var ar = new(ApiResult)
-	ar.Client = "127.0.0.1"
+	ar.Client = Client
 	ar.TaskId = api.TaskId
 	ar.TestplanId = api.TestplanId
 	ar.TestcaseId = api.TestcaseId
@@ -140,11 +214,13 @@ func GetApiResult(api Api, parameterId int64, requestHeaders map[string]string, 
 	ar.StartTime = startTime
 	ar.EndTime = endTime
 	ar.Message = message
+	ar.Key = Key
 	return *ar
 }
 
 func GetTask() (*Task, error) {
-	response, err := http.Get(server)
+	url := "http://" + Server + GET_TASK+"?client="+Client+"&key="+Key
+	response, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -165,6 +241,7 @@ func GetTask() (*Task, error) {
 }
 
 func GetUrl(parameter map[string]string, api Api) string {
+	//TODO ENV需要带服务器地址
 	u, _ := url.Parse("http://127.0.0.1:8080" + api.Path)
 	q := u.Query()
 	form := GetFormData(parameter, api.Formdatas)
@@ -208,4 +285,20 @@ func GetClient() (*http.Client, error) {
 
 func GetTimestamp() int64 {
 	return int64(time.Now().UnixNano() / (1000 * 1000))
+}
+
+func GetLocalIp() string {
+	addr, err := net.InterfaceAddrs()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	for _, address := range addr {
+		if ip, ok := address.(*net.IPNet); ok && !ip.IP.IsLoopback() {
+			if ip.IP.To4() != nil {
+				return ip.IP.String()
+			}
+		}
+	}
+	return ""
 }
