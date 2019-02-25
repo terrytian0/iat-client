@@ -18,7 +18,7 @@ var currentTask = make(map[int64]iat.Task)
 var mutex sync.Mutex
 
 func main() {
-	flag.StringVar(&iat.Server, "s", "127.0.0.1:8080", "iat server")
+	flag.StringVar(&iat.Server, "s", "192.168.3.10:8080", "iat server")
 	flag.StringVar(&iat.Client, "l", "", "iat server")
 	flag.Parse()
 	if iat.Client == "" {
@@ -244,6 +244,7 @@ func compare(parameter map[string]string, method string, expect string, actual s
 }
 
 func interfaceToString(res interface{}) string {
+	fmt.Println(res)
 	switch res.(type) {
 	case int:
 		v := res.(int)
@@ -253,8 +254,11 @@ func interfaceToString(res interface{}) string {
 		return strconv.FormatFloat(v, 'f', -1, 64)
 	case string:
 		return res.(string)
+	case bool:
+		v:=res.(bool)
+		return strconv.FormatBool(v)
 	default:
-		fmt.Println("json type error")
+		fmt.Println("json type error，")
 		return res.(string)
 	}
 }
