@@ -62,17 +62,23 @@ func exec() {
 }
 
 func runTask(task iat.Task) {
+	var services []iat.Service
+	json.Unmarshal([]byte(task.Env), &services)
+	var envs=make(map[int64]string)
+	for _,service := range services{
+		envs[service.ServiceId]=service.Config.Host+":"+strconv.Itoa(service.Config.Port)
+	}
 	for _, testcase := range task.Testcases {
-		runTestcase(testcase)
+		runTestcase(testcase,envs)
 	}
 }
 
-func runTestcase(testcase iat.Testcase) (bool, string) {
+func runTestcase(testcase iat.Testcase,envs map[int64]string) (bool, string) {
 	for _, parameter := range testcase.Parameters {
 		p := make(map[string]string)
 		p = iat.GetParameter(p, parameter)
 		startTime := iat.GetTimestamp()
-		p, res, message := runParameter(p, parameter.Id, testcase.Keywords)
+		p, res, message := runParameter(p, parameter.Id, testcase.Keywords,envs)
 		endTime := iat.GetTimestamp()
 		parameterResult := iat.GetParameterResult(parameter.Id, startTime, endTime, res, message)
 		iat.UploadParameterResult(parameterResult)
@@ -83,9 +89,9 @@ func runTestcase(testcase iat.Testcase) (bool, string) {
 	return true, ""
 }
 
-func runParameter(parameter map[string]string, parameterId int64, keywords []iat.Keyword) (map[string]string, bool, string) {
+func runParameter(parameter map[string]string, parameterId int64, keywords []iat.Keyword,envs map[int64]string) (map[string]string, bool, string) {
 	for _, keyword := range keywords {
-		parameter, res, message := runKeyword(parameter, parameterId, keyword)
+		parameter, res, message := runKeyword(parameter, parameterId, keyword,envs)
 		if res == false {
 			return parameter, false, message
 		}
@@ -93,22 +99,27 @@ func runParameter(parameter map[string]string, parameterId int64, keywords []iat
 	return parameter, true, ""
 }
 
-func runKeyword(parameter map[string]string, parameterId int64, keyword iat.Keyword) (map[string]string, bool, string) {
+func runKeyword(parameter map[string]string, parameterId int64, keyword iat.Keyword,envs map[int64]string) (map[string]string, bool, string) {
 	res := true
 	for _, api := range keyword.Apis {
-		parameter, res, message := runApi(parameter, parameterId, api)
+		parameter, res, message := runApi(parameter, parameterId, api,envs)
 		if res == false {
 			return parameter, res, message
 		}
 	}
 	return parameter, res, ""
 }
-func runApi(parameter map[string]string, parameterId int64, api iat.Api) (map[string]string, bool, string) {
+func runApi(parameter map[string]string, parameterId int64, api iat.Api,envs map[int64]string) (map[string]string, bool, string) {
 	client, err := iat.GetClient()
 	if err != nil {
 		fmt.Println(err)
+		return parameter,false,err.Error()
 	}
-	u := iat.GetUrl(parameter, api)
+	u,err := iat.GetUrl(parameter, api,envs)
+	if err != nil {
+		fmt.Println(err)
+		return parameter,false,err.Error()
+	}
 	requestBody := iat.GetBody(parameter, api.Body)
 	requestHeaders := iat.GetHeader(parameter, api.Headers)
 	req := iat.GetRequest(u, api.Method, requestHeaders, requestBody)

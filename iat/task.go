@@ -76,8 +76,6 @@ func GetFormData(parameter map[string]string, formData string) map[string]string
 	return form
 }
 
-
-
 func GetParameter(p map[string]string, parameter Parameter) map[string]string {
 	if parameter.Parameters == "" {
 		return p
@@ -93,7 +91,6 @@ func GetParameter(p map[string]string, parameter Parameter) map[string]string {
 	return p
 }
 
-
 func ParameterReplace(parameter map[string]string, str string) string {
 	re := regexp.MustCompile("#{(.*?)}+")
 	sub := re.FindAllStringSubmatch(str, -1)
@@ -104,7 +101,6 @@ func ParameterReplace(parameter map[string]string, str string) string {
 	}
 	return str
 }
-
 
 type ApiResult struct {
 	TaskId            int64  `json:"taskId"`
@@ -205,6 +201,7 @@ type Body struct {
 
 type Api struct {
 	Id                int64  `json:"id"`
+	ServiceId         int64  `json:"serviceId"`
 	TaskId            int64  `json:"taskId"`
 	TestplanId        int64  `json:"testplanId"`
 	TestcaseId        int64  `json:"testcaseId"`
@@ -256,17 +253,30 @@ type Testcase struct {
 }
 
 type Task struct {
-	Id           int64  `json:"id"`
-	ServiceId    int64  `json:"serviceId"`
-	TestplanId   int64  `json:"testplanId"`
-	TestplanName string `json:"testplanName"`
-	PassRate     int32  `json:"passRate"`
-	Coverage     int32  `json:"coverage"`
-	Status       string `json:"status"`
-	Client       string `json:"client"`
-	CreateUser   string `json:"createUser"`
-	//CreateTime   time.Time `json:"createTime"`
-	UpdateUser string `json:"updateUser"`
-	//UpdateTime   time.Time `json:"updateTime"`
-	Testcases []Testcase `json:"testcases"`
+	Id           int64      `json:"id"`
+	ServiceId    int64      `json:"serviceId"`
+	TestplanId   int64      `json:"testplanId"`
+	TestplanName string     `json:"testplanName"`
+	Env          string     `json:"env"`
+	PassRate     int32      `json:"passRate"`
+	Coverage     int32      `json:"coverage"`
+	Status       string     `json:"status"`
+	Client       string     `json:"client"`
+	CreateUser   string     `json:"createUser"`
+	UpdateUser   string     `json:"updateUser"`
+	Testcases    []Testcase `json:"testcases"`
+}
+
+type Service struct {
+	ServiceId   int64  `json:"serviceId"`
+	ServiceName string `json:"serviceName"`
+	Config      Config `json:"env"`
+}
+
+type Config struct {
+	Name      string `json:"env"`
+	Host      string `json:"host"`
+	Id        int64  `json:"id"`
+	Port      int    `json:"port"`
+	ServiceId int64  `json:"serviceId"`
 }

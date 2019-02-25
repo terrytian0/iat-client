@@ -250,9 +250,13 @@ func GetTask() (*Task, error) {
 	return &result.Content, nil
 }
 
-func GetUrl(parameter map[string]string, api Api) string {
+func GetUrl(parameter map[string]string, api Api, envs map[int64]string) (string, error) {
 	//TODO ENV需要带服务器地址
-	u, _ := url.Parse("http://127.0.0.1:8080" + api.Path)
+	host := envs[api.ServiceId]
+	if host == "" {
+		return "", errors.New("服务为设置环境变量！")
+	}
+	u, _ := url.Parse("http://" + host + api.Path)
 	q := u.Query()
 	form := GetFormData(parameter, api.Formdatas)
 	if form != nil {
@@ -261,7 +265,7 @@ func GetUrl(parameter map[string]string, api Api) string {
 		}
 	}
 	u.RawQuery = q.Encode()
-	return u.String()
+	return u.String(), nil
 }
 
 func GetRequest(url string, method string, headers map[string]string, body string) *http.Request {
