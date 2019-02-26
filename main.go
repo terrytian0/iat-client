@@ -12,15 +12,22 @@ import (
 	"github.com/terrtian0/iat-client/iat"
 	"net/http"
 	"flag"
+	"os"
 )
 
 var currentTask = make(map[int64]iat.Task)
 var mutex sync.Mutex
 
 func main() {
-	flag.StringVar(&iat.Server, "s", "192.168.3.10:8080", "iat server")
-	flag.StringVar(&iat.Client, "l", "", "iat server")
+	flag.StringVar(&iat.Server, "s", "127.0.0.1:8080", "iat server")
+	flag.StringVar(&iat.Client, "c", "", "iat client name")
 	flag.Parse()
+	if os.Getenv("IAT_SERVER")!=""{
+		iat.Client = os.Getenv("IAT_SERVER")
+	}
+	if os.Getenv("IAT_CLIENT_NAME")!=""{
+		iat.Client = os.Getenv("IAT_CLIENT_NAME")
+	}
 	if iat.Client == "" {
 		iat.Client = iat.GetLocalIp()
 	}
