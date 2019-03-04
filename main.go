@@ -150,7 +150,7 @@ func runApi(parameter map[string]string, parameterId int64, api iat.Api,envs map
 			res = false
 			message = err.Error()
 		} else {
-			extractors := iat.GetExtractor(api.Extractors)
+			extractors = iat.GetExtractor(api.Extractors)
 			parameter, extractors = extractor(parameter, string(responseBody), extractors)
 			asserts := iat.GetAssert(api.Asserts)
 			res, asserts, message = assert(parameter, response.StatusCode, string(responseBody), response.Header, asserts)
