@@ -111,6 +111,8 @@ type ApiResult struct {
 	KeywordId         int64  `json:"keywordId"`
 	KeywordApiId      int64  `json:"keywordApiId"`
 	ApiId             int64  `json:"apiId"`
+	Url               string `json:"url"`
+	Method            string `json:"method"`
 	RequestHeaders    string `json:"requestHeaders"`
 	RequestFormdatas  string `json:"requestFormdatas"`
 	RequestBody       string `json:"requestBody"`

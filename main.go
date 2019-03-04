@@ -11,8 +11,8 @@ import (
 	"sync"
 	"github.com/terrtian0/iat-client/iat"
 	"net/http"
-	"flag"
 	"os"
+	"flag"
 )
 
 var currentTask = make(map[int64]iat.Task)
@@ -156,7 +156,7 @@ func runApi(parameter map[string]string, parameterId int64, api iat.Api,envs map
 			res, asserts, message = assert(parameter, response.StatusCode, string(responseBody), response.Header, asserts)
 		}
 	}
-	apiResult := iat.GetApiResult(api, parameterId, requestHeaders, requestBody, responseHeader, responseBody, extractors, asserts, startTime, endTime, res, message)
+	apiResult := iat.GetApiResult(api,u, parameterId, requestHeaders, requestBody, responseHeader, responseBody, extractors, asserts, startTime, endTime, res, message)
 	iat.UploadApiResult(apiResult)
 	return parameter, res, message
 }

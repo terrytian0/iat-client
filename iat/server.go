@@ -189,7 +189,7 @@ func UploadApiResult(apiResult ApiResult) (bool, error) {
 	return true, nil
 }
 
-func GetApiResult(api Api, parameterId int64, requestHeaders map[string]string, requestBody string, header http.Header, responseBody []byte, extractors []Extractor, asserts []Assert, startTime int64, endTime int64, status bool, message string) ApiResult {
+func GetApiResult(api Api, url string, parameterId int64, requestHeaders map[string]string, requestBody string, header http.Header, responseBody []byte, extractors []Extractor, asserts []Assert, startTime int64, endTime int64, status bool, message string) ApiResult {
 	var ar = new(ApiResult)
 	ar.Client = Client
 	ar.TaskId = api.TaskId
@@ -200,6 +200,8 @@ func GetApiResult(api Api, parameterId int64, requestHeaders map[string]string, 
 	ar.KeywordId = api.KeywordId
 	ar.KeywordApiId = api.KeywordApiId
 	ar.ApiId = api.ApiId
+	ar.Url = url
+	ar.Method = api.Method
 	ar.Status = strconv.FormatBool(status)
 	if requestHeaders != nil {
 		rh, _ := json.Marshal(requestHeaders)
